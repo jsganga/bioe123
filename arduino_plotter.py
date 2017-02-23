@@ -7,13 +7,12 @@ Date: 2/20/2017
 Original:
 Author: Mahesh Venkitachalam
 Website: electronut.in
+git: https://gist.github.com/electronut/d5e5f68c610821e311b0
 """
 
-import sys, serial, argparse
+import sys, serial
 import numpy as np
-from time import sleep
 from collections import deque
-
 import matplotlib.pyplot as plt 
 import matplotlib.animation as animation
 
@@ -21,19 +20,27 @@ import matplotlib.animation as animation
 # plot class
 class AnalogPlot(object):
   # constr
-    def __init__(self, strPort, maxLen, baud_rate, lines):
+    def __init__(self, strPort, maxLen, baud_rate):
       # open serial port
-      self.ser     = serial.Serial(strPort, baud_rate)
+      self.arduino = serial.Serial(strPort, baud_rate)
       self.maxLen  = maxLen
-      self.n_lines = len(lines)
-      self.lines   = lines
+      # grab a printed line to check length
+      stream = self.arduino.readline()
+      stream_values = [float(val) for val in stream.split()]
+      # plot nothing, but want handle to line object
+      self.n_lines = len(stream_values)
+      self.lines = []
+      for i in range(self.n_lines):
+        line, = plt.plot([], [])
+        self.lines.append(line)
       self.data    = []
-      for i in range(n_lines):
+      for i in range(self.n_lines):
         self.data.append(deque([0.0]*maxLen))
 
     # add data
-    def add_to_plot(self, stream_values, lines):
+    def add_to_plot(self, stream_values):
         for i in range(self.n_lines):
+            print(i, stream_values)
             val    = stream_values[i]
             line   = self.lines[i]
             data_q = self.data[i]
@@ -41,24 +48,25 @@ class AnalogPlot(object):
             data_q.append(val)
             line.set_data(np.linspace(-self.maxLen,0,self.maxLen), data_q)
 
-
     # update plot
-    def update(self, frameNum, lines):
+    def update(self, frameNum):
       try:
-          stream = self.ser.readline()
+          stream = self.arduino.readline()
+          # while self.arduino.inWaiting() > 0: # clears buffer
+          #     stream = self.arduino.readline()
           stream_values = [float(val) for val in stream.split()]
-          self.add_to_plot(stream_values, lines)
+          self.add_to_plot(stream_values)
       except KeyboardInterrupt:
           print('exiting')
       
     # clean up
     def close(self):
       # close serial
-      self.ser.flush()
-      self.ser.close()    
+      self.arduino.flush()
+      self.arduino.close()    
 
 # main() function
-def main(port, baud_rate, n_lines):
+def main(port, baud_rate):
 
     print('reading from serial port ' + port + '...')
 
@@ -75,13 +83,9 @@ def main(port, baud_rate, n_lines):
     y_min, y_max = 0, 1023
     plt.ylim([y_min, y_max])
 
-    # plot nothing, but want handle to line object
-    lines = []
-    for i in range(n_lines):
-        line, = plt.plot([], [])
-        lines.append(line)
+    
 
-    analogPlot = AnalogPlot(port, data_length, baud_rate, lines)
+    analogPlot = AnalogPlot(port, data_length, baud_rate)
     print('plotting data...')
 
     anim = animation.FuncAnimation(fig, analogPlot.update, 
@@ -96,6 +100,6 @@ def main(port, baud_rate, n_lines):
     print('exiting.')
   
 
-# call main
+# call main, CHANGE THESE VALUES!!!
 if __name__ == '__main__':
-    main('COM6', 9600, 2)
+    main('COM6', 9600)
