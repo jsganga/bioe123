@@ -40,7 +40,6 @@ class AnalogPlot(object):
     # add data
     def add_to_plot(self, stream_values):
         for i in range(self.n_lines):
-            print(i, stream_values)
             val    = stream_values[i]
             line   = self.lines[i]
             data_q = self.data[i]
@@ -101,5 +100,9 @@ def main(port, baud_rate):
   
 
 # call main, CHANGE THESE VALUES!!!
+# replace 'COM6' with whatever the tools pulldown bar shows you're connected to
+# for mac, it looks like '/dev/cu.usbmodem....' (without the (Arduino/Genuino Micro))
+# Also, note the arduino puts out data faster than we can plot in real time, so there's 
+# a delay between the plotted value and the actual value (~1-2 min)
 if __name__ == '__main__':
     main('COM6', 9600)
